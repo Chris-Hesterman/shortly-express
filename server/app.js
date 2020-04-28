@@ -72,9 +72,46 @@ app.post('/links', (req, res, next) => {
 // Write your authentication routes here
 /************************************************************/
 
-app.post('/login', (res, req, next) => {});
+app.post('/login', (req, res, next) => {
+  var username = req.body.username;
+  var attemptedPassword = req.body.password;
 
-app.post('/signup', (res, req, next) => {});
+  models.Users.getAll({ username: username })
+    .then((userArray) => {
+      if (userArray.length) {
+        var password = userArray[0].password;
+        var salt = userArray[0].salt;
+
+        if (models.Users.compare(attemptedPassword, password, salt)) {
+          res.redirect('index');
+        } else {
+          res.redirect('login');
+        }
+      } else {
+        res.redirect('signup');
+      }
+    })
+    .catch((err) => {
+      throw err;
+    });
+});
+
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
+app.post('/signup', (req, res, next) => {
+  var username = req.body.username;
+  var password = req.body.password;
+
+  models.Users.create({ username, password });
+  res.sendStatus(200);
+  res.end();
+});
+
+app.get('/signup', (req, res) => {
+  res.render('signup');
+});
 /************************************************************/
 // Handle the code parameter route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
