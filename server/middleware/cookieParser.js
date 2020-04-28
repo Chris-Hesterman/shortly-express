@@ -1,4 +1,3 @@
-const parseCookies = (req, res, next) => {
-};
+const parseCookies = (req, res, next) => {};
 
 module.exports = parseCookies;
