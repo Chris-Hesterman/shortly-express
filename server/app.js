@@ -4,6 +4,7 @@ const utils = require('./lib/hashUtils');
 const partials = require('express-partials');
 const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
+const Cookie = require('./middleware/cookieParser');
 const models = require('./models');
 
 const app = express();
@@ -14,6 +15,8 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
+app.get('/', Cookie());
+app.use(Auth());
 
 app.get('/', (req, res) => {
   res.render('index');

@@ -1,10 +1,14 @@
 const parseCookies = (req, res, next) => {
-  if (req.headers.cookie) {
-    var cookies = JSON.parse(req.headers.cookie);
-    req.cookies = cookies;
-  } else {
-    req.cookies = null;
-  }
+  console.log(req.headers);
+  // if (req.headers.cookie === 'undefined') {
+  //   console.log('there is a cookie!');
+  //   var cookies = JSON.parse(req.headers.cookie);
+  //   console.log(req.headers.cookie);
+  //   req.cookies = cookies;
+  // } else {
+  //   console.log('there is no cookie!');
+  //   req.cookies = null;
+  // }
   return next();
 };
 
