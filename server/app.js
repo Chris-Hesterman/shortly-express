@@ -15,14 +15,27 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
-app.get('/', Cookie());
-app.use(Auth());
+
+// app.use(Cookie);
+// app.use(Auth.createSession);
+
+app.use(Cookie, Auth.createSession);
+
+// app.use((req, res, next) => {
+//   Cookie(req, res, next);
+//   Auth.createSession(req, res, next);
+// });
 
 app.get('/', (req, res) => {
+  // Auth.createSession(req, res, (err, hash) => {
+  //   console.log('APP JS PASSING HASH ****', hash);
+  //   res.cookie('session', hash);
+  // });
   res.render('index');
 });
 
 app.get('/create', (req, res) => {
+  console.log('two for the price of one');
   res.render('index');
 });
 
@@ -86,12 +99,12 @@ app.post('/login', (req, res, next) => {
         var salt = userArray[0].salt;
 
         if (models.Users.compare(attemptedPassword, password, salt)) {
-          res.redirect('index');
+          res.redirect('/');
         } else {
-          res.redirect('login');
+          res.redirect('/login');
         }
       } else {
-        res.redirect('signup');
+        res.redirect('/login');
       }
     })
     .catch((err) => {
@@ -107,9 +120,17 @@ app.post('/signup', (req, res, next) => {
   var username = req.body.username;
   var password = req.body.password;
 
-  models.Users.create({ username, password });
-  res.sendStatus(200);
-  res.end();
+  models.Users.get({ username: username }).then((row) => {
+    if (row) {
+      res.redirect('/signup');
+    } else {
+      models.Users.create({ username, password }).then(() => {
+        res.redirect('/');
+        res.sendStatus(200);
+        res.end();
+      });
+    }
+  });
 });
 
 app.get('/signup', (req, res) => {

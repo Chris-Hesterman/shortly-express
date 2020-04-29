@@ -17,11 +17,19 @@ module.exports.createSession = (req, res, next) => {
         throw err;
       });
   } else {
-    models.Sessions.create().then((hash) => {
-      console.log('*******************HASH************************');
-      console.log('Hash: ', hash);
+    models.Sessions.create().then((hashRow) => {
+      //console.log('*******************HASH ROW************************');
+      //console.log('Hash: ', hashRow);
+      models.Sessions.get({ id: hashRow.insertId }).then((hash) => {
+        //console.log('*******************HASH ************************');
+        //console.log(hash);
+        //res.cookie('session', hash.hash);
+        //console.log('Cookie ', res.cookies);
+        // next(null, hash.hash);
+      });
     });
   }
+  next();
 };
 
 /************************************************************/
