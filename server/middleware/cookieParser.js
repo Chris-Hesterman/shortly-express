@@ -1,6 +1,10 @@
 const parseCookies = (req, res, next) => {
-  var cookies = JSON.parse(req.headers.cookie);
-  req.cookies = cookies;
+  if (req.headers.cookie) {
+    var cookies = JSON.parse(req.headers.cookie);
+    req.cookies = cookies;
+  } else {
+    req.cookies = null;
+  }
   return next();
 };
 
