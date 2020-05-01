@@ -3,7 +3,7 @@ const path = require('path');
 const utils = require('./lib/hashUtils');
 const partials = require('express-partials');
 const bodyParser = require('body-parser');
-const Auth = require('./middleware/auth');
+const Auth = require('./middleware/auth').createSession;
 const Cookie = require('./middleware/cookieParser');
 const models = require('./models');
 
@@ -14,12 +14,11 @@ app.set('view engine', 'ejs');
 app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(Cookie, Auth);
 app.use(express.static(path.join(__dirname, '../public')));
 
 // app.use(Cookie);
 // app.use(Auth.createSession);
-
-app.use(Cookie, Auth.createSession);
 
 // app.use((req, res, next) => {
 //   Cookie(req, res, next);
@@ -125,8 +124,7 @@ app.post('/signup', (req, res, next) => {
       res.redirect('/signup');
     } else {
       models.Users.create({ username, password }).then(() => {
-        res.redirect('/');
-        res.sendStatus(200);
+        res.status(301).redirect('/');
         res.end();
       });
     }
