@@ -456,9 +456,10 @@ describe('', function () {
           var secondResponse = httpMocks.createResponse();
           var requestWithCookies = httpMocks.createRequest();
           requestWithCookies.cookies.shortlyid = cookie;
-
+          console.log(cookie);
           createSession(requestWithCookies, secondResponse, function () {
             var session = requestWithCookies.session;
+            console.log(session);
             expect(session).to.be.an('object');
             expect(session.hash).to.exist;
             expect(session.hash).to.be.cookie;
