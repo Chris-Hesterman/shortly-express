@@ -55,27 +55,22 @@ module.exports.createSession = (req, res, next) => {
 /************************************************************/
 // Add additional authentication middleware functions below
 /************************************************************/
-// models.Sessions.create()
-//   .then((session) => {
-//     console.log('session created');
-//     return session.insertId;
-//   })
-//   .then((sessionId) => {
-//     models.Sessions.get({ id: sessionId })
-//       .then((sessionRow) => {
-//         req.session = {
-//           id: sessionRow.id,
-//           hash: sessionRow.hash,
-//           userId: sessionRow.userId
-//         };
-//       })
-//       .then(() => {
-//         res.cookie('shortlyid', req.session.hash);
-//       })
-//       .then(() => {
-//         next();
-//       });
-//   })
-//   .catch((err) => {
-//     throw err;
-//   });
+
+module.exports.verifySession = (req, res, next) => {
+  console.log('************COOKIES AND SESSION OBJECT FROM REQ************');
+  console.log(req.cookies, req.session);
+  if (req.cookies.shortlyid) {
+    models.Sessions.get({ hash: req.cookies.shortlyid }).then((sessionRow) => {
+      if (
+        sessionRow &&
+        sessionRow.hash === req.cookies.shortlyid &&
+        sessionRow.userId
+      ) {
+        next(null, true);
+      } else {
+        //res.status(301).redirect('/login');
+        next(null, false);
+      }
+    });
+  }
+};

@@ -3,7 +3,7 @@ const path = require('path');
 const utils = require('./lib/hashUtils');
 const partials = require('express-partials');
 const bodyParser = require('body-parser');
-const Auth = require('./middleware/auth').createSession;
+const Auth = require('./middleware/auth');
 const Cookie = require('./middleware/cookieParser');
 const models = require('./models');
 
@@ -14,7 +14,7 @@ app.set('view engine', 'ejs');
 app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(Cookie, Auth);
+app.use(Cookie, Auth.createSession);
 app.use(express.static(path.join(__dirname, '../public')));
 
 // app.use(Cookie);
@@ -25,10 +25,13 @@ app.use(express.static(path.join(__dirname, '../public')));
 //   Auth.createSession(req, res, next);
 // });
 
-app.get('/', (req, res) => {
-  // Auth.createSession(req, res, (err, hash) => {
-  //   console.log('APP JS PASSING HASH ****', hash);
-  //   res.cookie('session', hash);
+app.get('/', (req, res, next) => {
+  // Auth.verifySession(req, res, (err, isPassed) => {
+  //   if (isPassed) {
+  //     res.render('index');
+  //   } else {
+  //     res.status(301).redirect('/login');
+  //   }
   // });
   res.render('index');
 });
