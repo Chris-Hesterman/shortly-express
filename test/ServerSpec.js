@@ -459,10 +459,10 @@ describe('', function () {
           console.log(cookie);
           createSession(requestWithCookies, secondResponse, function () {
             var session = requestWithCookies.session;
-            console.log(session);
             expect(session).to.be.an('object');
             expect(session.hash).to.exist;
             expect(session.hash).to.be.cookie;
+            console.log('passed');
             done();
           });
         });
@@ -538,7 +538,7 @@ describe('', function () {
     });
   });
 
-  xdescribe('Sessions and cookies', function () {
+  describe('Sessions and cookies', function () {
     var requestWithSession;
     var cookieJar;
 
