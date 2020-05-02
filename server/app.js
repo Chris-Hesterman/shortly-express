@@ -15,6 +15,7 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(Cookie, Auth.createSession);
+app.use(['/create', '/links'], Auth.verifySession);
 app.use(express.static(path.join(__dirname, '../public')));
 
 // app.use(Cookie);
@@ -118,17 +119,32 @@ app.get('/login', (req, res) => {
   res.render('login');
 });
 
+app.get('/logout', (req, res) => {
+  res.clearCookie('shortlyid');
+  models.Sessions.delete({ userId: req.session.userId }).then(() => {
+    req.session = {};
+    res.redirect('/login');
+  });
+});
+
 app.post('/signup', (req, res, next) => {
   var username = req.body.username;
   var password = req.body.password;
 
   models.Users.get({ username: username }).then((row) => {
     if (row) {
+      console.log('***USER ALREADY EXIST ON SIGNING UP');
+      console.log(row);
       res.redirect('/signup');
     } else {
-      models.Users.create({ username, password }).then(() => {
-        res.status(301).redirect('/');
-        res.end();
+      models.Users.create({ username, password }).then((user) => {
+        models.Sessions.update(
+          { hash: req.session.hash },
+          { userId: user.insertId }
+        ).then(() => {
+          res.status(301).redirect('/');
+          res.end();
+        });
       });
     }
   });
