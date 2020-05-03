@@ -15,25 +15,10 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(Cookie, Auth.createSession);
-// app.use(['/create', '/links'], Auth.verifySession);
+
 app.use(express.static(path.join(__dirname, '../public')));
 
-// app.use(Cookie);
-// app.use(Auth.createSession);
-
-// app.use((req, res, next) => {
-//   Cookie(req, res, next);
-//   Auth.createSession(req, res, next);
-// });
-
 app.get('/', Auth.verifySession, (req, res, next) => {
-  // Auth.verifySession(req, res, (err, isPassed) => {
-  //   if (isPassed) {
-  //     res.render('index');
-  //   } else {
-  //     res.status(301).redirect('/login');
-  //   }
-  // });
   res.render('index');
 });
 
