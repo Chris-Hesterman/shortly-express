@@ -2,6 +2,7 @@ var expect = require('chai').expect;
 var mysql = require('mysql');
 var request = require('request');
 var httpMocks = require('node-mocks-http');
+var models = require('../server/models');
 
 var app = require('../server/app.js');
 var schema = require('../server/db/config.js');
@@ -679,7 +680,7 @@ describe('', function () {
     });
   });
 
-  xdescribe('Link creation:', function () {
+  describe('Link creation:', function () {
     var cookies = request.jar();
     var requestWithSession = request.defaults({ jar: cookies });
     var options = {
@@ -691,7 +692,7 @@ describe('', function () {
       }
     };
 
-    xbeforeEach(function (done) {
+    beforeEach(function (done) {
       var options = {
         method: 'POST',
         followAllRedirects: true,
@@ -862,6 +863,141 @@ describe('', function () {
           expect(body).to.include('"title":"Google"');
           expect(body).to.include('"code":"' + link.code + '"');
           done();
+        });
+      });
+    });
+
+    describe('Check session garbage collector ', function () {
+      var options = {
+        method: 'GET',
+        uri: 'http://127.0.0.1:4568/login'
+      };
+
+      var sessionSize;
+      var sessionSizeAfterLogout;
+
+      it('Should delete hashes with null userId on logout', (done) => {
+        for (let i = 0; i < 10; i++) {
+          models.Sessions.create();
+        }
+
+        db.query('SELECT * FROM sessions', (err, result) => {
+          if (err) {
+            return done(err);
+          }
+          sessionSize = result.length;
+        });
+
+        var options = {
+          method: 'GET',
+          uri: 'http://127.0.0.1:4568/logout'
+        };
+
+        requestWithSession(options, function (error, res, body) {
+          if (error) {
+            return done(error);
+          }
+
+          db.query('SELECT * FROM sessions', (err, result) => {
+            if (err) {
+              return done(err);
+            }
+            sessionSizeAfterLogout = result.length;
+            expect(sessionSizeAfterLogout).to.be.below(sessionSize);
+            done();
+          });
+        });
+      });
+    });
+
+    describe('Checks if new user gets assigned a session', function () {
+      var requestWithSession;
+      var cookieJar;
+
+      var addUser = function (callback) {
+        var options = {
+          method: 'POST',
+          uri: 'http://127.0.0.1:4568/signup',
+          json: {
+            username: 'Ourtest',
+            password: 'ourtest'
+          }
+        };
+
+        requestWithSession(options, callback);
+      };
+
+      beforeEach(function (done) {
+        cookieJar = request.jar();
+        requestWithSession = request.defaults({ jar: cookieJar });
+        done();
+      });
+
+      it('assigns session to a user when user signs up', function (done) {
+        addUser(function (err, res, body) {
+          if (err) {
+            return done(err);
+          }
+          var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+          var cookieValue = cookies[0].value;
+
+          var queryString = `
+          SELECT users.username FROM users, sessions
+          WHERE sessions.hash = ? AND users.id = sessions.userId
+        `;
+
+          db.query(queryString, cookieValue, function (error, users) {
+            if (error) {
+              return done(error);
+            }
+            var user = users[0];
+            console.log('USER : ', user);
+            expect(user.username).to.equal('Ourtest');
+            done();
+          });
+        });
+      });
+    });
+
+    describe('Checks click table', function () {
+      beforeEach(function (done) {
+        // save a link to the database
+        link = {
+          url: 'http://www.google.com/',
+          title: 'Google',
+          baseUrl: 'http://127.0.0.1:4568',
+          code: '2387f'
+        };
+        db.query('INSERT INTO links SET ?', link, done);
+      });
+
+      beforeEach(function (done) {
+        // clears click table
+
+        db.query('TRUNCATE TABLE clicks ', done);
+      });
+
+      it('adds new entry to clicks table with id of link', function (done) {
+        //simulate a click on link (request with http://127.0.0.1:4568/2387f)
+        var options = {
+          method: 'GET',
+          uri: 'http://127.0.0.1:4568/2387f'
+        };
+
+        requestWithSession(options, (err, res, body) => {
+          //query link table to grab shortened link's id
+          db.query(
+            'SELECT * FROM clicks, links WHERE clicks.linkId = links.id',
+            (err, results) => {
+              if (err) {
+                throw err;
+              } else {
+                console.log('RESULTS', results);
+                expect(results.length).to.be.above(0);
+                done();
+              }
+            }
+          );
         });
       });
     });
