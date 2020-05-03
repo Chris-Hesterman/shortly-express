@@ -15,7 +15,7 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(Cookie, Auth.createSession);
-app.use(['/create', '/links'], Auth.verifySession);
+// app.use(['/create', '/links'], Auth.verifySession);
 app.use(express.static(path.join(__dirname, '../public')));
 
 // app.use(Cookie);
@@ -26,7 +26,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 //   Auth.createSession(req, res, next);
 // });
 
-app.get('/', (req, res, next) => {
+app.get('/', Auth.verifySession, (req, res, next) => {
   // Auth.verifySession(req, res, (err, isPassed) => {
   //   if (isPassed) {
   //     res.render('index');
@@ -37,12 +37,12 @@ app.get('/', (req, res, next) => {
   res.render('index');
 });
 
-app.get('/create', (req, res) => {
+app.get('/create', Auth.verifySession, (req, res) => {
   console.log('two for the price of one');
   res.render('index');
 });
 
-app.get('/links', (req, res, next) => {
+app.get('/links', Auth.verifySession, (req, res, next) => {
   models.Links.getAll()
     .then((links) => {
       res.status(200).send(links);
@@ -52,7 +52,7 @@ app.get('/links', (req, res, next) => {
     });
 });
 
-app.post('/links', (req, res, next) => {
+app.post('/links', Auth.verifySession, (req, res, next) => {
   var url = req.body.url;
   if (!models.Links.isValidUrl(url)) {
     // send back a 404 if link is not valid
@@ -98,11 +98,17 @@ app.post('/login', (req, res, next) => {
   models.Users.getAll({ username: username })
     .then((userArray) => {
       if (userArray.length) {
+        var userId = userArray[0].id;
         var password = userArray[0].password;
         var salt = userArray[0].salt;
 
         if (models.Users.compare(attemptedPassword, password, salt)) {
-          res.redirect('/');
+          models.Sessions.update(
+            { hash: req.session.hash },
+            { userId: userId }
+          ).then(() => {
+            res.status(301).redirect('/');
+          });
         } else {
           res.redirect('/login');
         }
@@ -123,7 +129,9 @@ app.get('/logout', (req, res) => {
   res.clearCookie('shortlyid');
   models.Sessions.delete({ userId: req.session.userId }).then(() => {
     req.session = {};
-    res.redirect('/login');
+    models.Sessions.deleteAll({ userId: null }).then(() => {
+      res.redirect('/login');
+    });
   });
 });
 
